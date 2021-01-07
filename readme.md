@@ -1,6 +1,11 @@
 # BMPlib
 Look at main.cpp for examples
 
+Disclaimer!!:
+> This is in no way, shape or form complete or compatible with every possible bmp!
+> It does exactly what I need it to, and that is to convert most bmp images to pixel buffers, convert between rgb/rgba/bw pixel buffers and write it all back to a bmp image.
+> I am just publishing this in case someone wants to do said things and does not care about incompatibilities with some bmps.
+
 ## License
 Don't Be a Jerk: The Open Source Software License.
 Last Update: Jan, 7, 2021
