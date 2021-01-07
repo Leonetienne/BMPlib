@@ -1,9 +1,7 @@
 #pragma once
 #include <sstream>
 #include <fstream>
-#include <type_traits>
 #include <iomanip>
-
 
 namespace BMPlib
 {
