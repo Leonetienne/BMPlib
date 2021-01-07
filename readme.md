@@ -1,5 +1,5 @@
 # BMPlib
-Look at main.c for examples
+Look at main.cpp for examples
 
 ## License
 Don't Be a Jerk: The Open Source Software License.
