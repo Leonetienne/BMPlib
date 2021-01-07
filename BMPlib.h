@@ -507,7 +507,7 @@ namespace BMPlib
                     switch (colorMode)
                     {
                     case COLOR_MODE::RGB:
-                        // bmp format ==> R-G-B ==> R-G-B ==> pixelbfr
+                        // bmp format ==> B-G-R ==> R-G-B ==> pixelbfr
                         bs.read((pixelbfr + idx + 2), 1); // Read B byte
                         bs.read((pixelbfr + idx + 1), 1); // Read G byte
                         bs.read((pixelbfr + idx + 0), 1); // Read R byte
@@ -515,7 +515,7 @@ namespace BMPlib
 
                     case COLOR_MODE::RGBA:
 
-                        // bmp format ==> A-R-G-B ==> R-G-B-A ==> pixelbfr
+                        // bmp format ==> B-G-R-A ==> R-G-B-A ==> pixelbfr
                         bs.read((pixelbfr + idx + 2), 1); // Read B byte
                         bs.read((pixelbfr + idx + 1), 1); // Read G byte
                         bs.read((pixelbfr + idx + 0), 1); // Read R byte
