@@ -77,13 +77,13 @@ namespace BMPlib
             return;
         }
 
-        explicit BMP(const std::size_t& width, const std::size_t& height, const BMP::COLOR_MODE& colorMode = BMP::COLOR_MODE::RGBA)
+        explicit BMP(const std::size_t& width, const std::size_t& height, const BMP::COLOR_MODE& colorMode = BMP::COLOR_MODE::RGB)
         {
             ReInitialize(width, height, colorMode);
             return;
         }
 
-        void ReInitialize(const std::size_t& width, const std::size_t& height, const BMP::COLOR_MODE& colorMode = BMP::COLOR_MODE::RGBA)
+        void ReInitialize(const std::size_t& width, const std::size_t& height, const BMP::COLOR_MODE& colorMode = BMP::COLOR_MODE::RGB)
         {
             // w and h are unsigned so this works!
             if (width + height == 0) ThrowException("Bad image dimensions!");
@@ -388,7 +388,7 @@ namespace BMPlib
                     switch (colorMode)
                     {
                     case COLOR_MODE::BW:
-                        // pixelbfr ==> R-G-B ==> R-G-B ==> bmp format
+                        // pixelbfr ==> R-G-B ==> B-G-R ==> bmp format
                         data.write((pixelbfr + idx), 1); // B
                         data.write((pixelbfr + idx), 1); // G
                         data.write((pixelbfr + idx), 1); // R
@@ -396,7 +396,7 @@ namespace BMPlib
                         break;
 
                     case COLOR_MODE::RGB:
-                        // pixelbfr ==> R-G-B ==> R-G-B ==> bmp format
+                        // pixelbfr ==> R-G-B ==> B-G-R ==> bmp format
                         data.write((pixelbfr + idx + 2), 1); // B
                         data.write((pixelbfr + idx + 1), 1); // G
                         data.write((pixelbfr + idx + 0), 1); // R
@@ -404,7 +404,7 @@ namespace BMPlib
                         break;
 
                     case COLOR_MODE::RGBA:
-                        // pixelbfr ==> R-G-B-A ==> A-R-G-B ==> bmp format
+                        // pixelbfr ==> R-G-B-A ==> B-G-R-A ==> bmp format
                         data.write((pixelbfr + idx + 2), 1); // B
                         data.write((pixelbfr + idx + 1), 1); // G
                         data.write((pixelbfr + idx + 0), 1); // R
@@ -470,6 +470,7 @@ namespace BMPlib
             FromBytes(bs, bitDepth);
             switch (bitDepth)
             {
+                // BW is not supported so we can't read a bw image
             case 24:
                 colorMode = COLOR_MODE::RGB;
                 break;

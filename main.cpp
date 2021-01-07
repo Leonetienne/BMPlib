@@ -54,8 +54,8 @@ void Example2()
 void Example3()
 {
     // Another example
-// Create image object of size 800x600px
-    BMP bmp(800, 600, BMP::COLOR_MODE::RGBA);
+    // Create image object of size 800x600px
+    BMP bmp(800, 600);
 
     // Generate nice color gradient image
     for (std::size_t x = 0; x < 800; x++)
@@ -67,8 +67,6 @@ void Example3()
                 (1.0 - ((double)y / 800.0)) * 255.0,
                 255);
         }
-
-    bmp.ConvertTo(BMP::COLOR_MODE::RGB);
 
     // Save to file
     if (!bmp.Write("test.bmp"))
