@@ -1,0 +1,8 @@
+# Basically a whitelist
+/*
+!main.cpp
+!BMPlib.h
+!test.bmp
+!.gitignore
+!readme.md
+!license.txt
