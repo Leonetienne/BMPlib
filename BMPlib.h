@@ -1,6 +1,7 @@
 #pragma once
 #include <sstream>
 #include <fstream>
+#include <string.h>
 
 namespace BMPlib
 {
@@ -10,26 +11,23 @@ namespace BMPlib
 
     using bytestring    = std::basic_string<byte>;
     using bytestream    = std::basic_stringstream<byte>;
-    using byteostream   = std::basic_ostream<byte>;
-    using byteistream   = std::basic_istream<byte>;
-    using byteofstream  = std::basic_ofstream<byte>;
-    using byteifstream  = std::basic_ifstream<byte>;
 
     template<typename T>
     // Will convert (int)15 to 0F 00 00 00 and NOT TO 00 00 00 0F
     bytestring ToBytes(T t)
     {
         std::basic_stringstream<byte> toret;
+        long long sizeofT = (long long)sizeof(T); // Let's make it a signed value to keep the compiler happy with the comparison
         byte* bPtr = (byte*)&t;
-        for (long long i = 0; i < sizeof(T); i++)
+        for (long long i = 0; i < sizeofT; i++)
             toret << *(bPtr + i);
 
         return toret.str();
     }
 
-    template<typename T>
+    template<typename ST, typename SO, typename T>
     // Will convert 0F 00 00 00 to 15 and NOT TO 251658240
-    byteistream& FromBytes(byteistream& is, T& b)
+    std::basic_istream<ST, SO>& FromBytes(std::basic_istream<ST, SO>& is, T& b)
     {
         const std::size_t sizeofT = sizeof(T);
         b = 0x0;
@@ -37,18 +35,12 @@ namespace BMPlib
 
         for (std::size_t i = 0; i < sizeofT; i++)
         {
-            is.read(&buf, 1);
+            is.read((ST*)&buf, 1);
             T bbuf = buf << (i * 8);
             b |= bbuf;
         }
 
         return is;
-    }
-
-    // Enable streaming streams themself
-    byteostream& operator<< (byteostream& os, const bytestream& osin)
-    {
-        return os << osin.str();
     }
 
     class BMP
@@ -75,6 +67,7 @@ namespace BMPlib
         }
 
         explicit BMP(const std::size_t& width, const std::size_t& height, const BMP::COLOR_MODE& colorMode = BMP::COLOR_MODE::RGB)
+            : isInitialized{false}
         {
             ReInitialize(width, height, colorMode);
             return;
@@ -107,7 +100,7 @@ namespace BMPlib
             }
 
             // Delete pixelbuffer if already exists
-            delete pixelbfr;
+            if (isInitialized) delete[] pixelbfr;
             sizeofPxlbfr = sizeof(byte) * width * height * numChannelsPXBF;
 
             // Try to allocate memory for the pixelbuffer
@@ -115,10 +108,10 @@ namespace BMPlib
             {
                 pixelbfr = new byte[sizeofPxlbfr];
             }
-            catch (std::bad_alloc)
+            catch (std::bad_alloc& e)
             {
                 // too bad!
-                ThrowException("Can't allocate memory for pixelbuffer!");
+                ThrowException(std::string("Can't allocate memory for pixelbuffer!") + e.what());
             }
 
             // Make image black
@@ -128,9 +121,17 @@ namespace BMPlib
             return;
         }
 
+#ifdef __linux__
+#pragma GCC diagnostic push
+// g++ doesn't see the parameters, numPx, and curPx getting used inside the switch... we don't want these false warnings
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
         // Will convert between color modes. Set isNonColorData to true to treat pixeldata as raw values rather than color
         void ConvertTo(const BMP::COLOR_MODE& convto, bool isNonColorData = false)
         {
+            // Damn this method is one hell of a mess
+
             if (!isInitialized)
                 ThrowException("Not initialized!");
 
@@ -139,19 +140,25 @@ namespace BMPlib
             {
                 tmp_pxlbfr = new byte[sizeofPxlbfr];
             }
-            catch (std::bad_alloc)
+            catch (std::bad_alloc&e )
             {
                 // too bad!
-                ThrowException("Can't allocate memory for temporary conversion pixelbuffer!");
+                ThrowException(std::string("Can't allocate memory for temporary conversion pixelbuffer!") + e.what());
+                return; // This won't ever be reached but it satisfies the compiler, soooo...
             }
-
             const std::size_t numPx = width * height;
             const std::size_t oldPxlbfrSize = sizeofPxlbfr;
+            const byte* curPx; // Usage may vary on the conversion in question. It's just a pixel cache for a small performance improvement
             memcpy(tmp_pxlbfr, pixelbfr, sizeofPxlbfr);
+
+#ifdef __linux__
+#pragma GCC diagnostic pop // Let's enable these warnings again
+#endif
 
             switch (colorMode)
             {
             case COLOR_MODE::BW:
+#ifndef __linux__
 #pragma region CONVERT_FROM_BW
                 switch (convto)
                 {
@@ -161,9 +168,10 @@ namespace BMPlib
                     ReInitialize(width, height, COLOR_MODE::RGB);
                     for (std::size_t i = 0; i < numPx; i++)
                     {
-                        pixelbfr[i * 3 + 0] = tmp_pxlbfr[i];
-                        pixelbfr[i * 3 + 1] = tmp_pxlbfr[i];
-                        pixelbfr[i * 3 + 2] = tmp_pxlbfr[i];
+                        curPx = tmp_pxlbfr + i;
+                        pixelbfr[i * 3 + 0] = *curPx;
+                        pixelbfr[i * 3 + 1] = *curPx;
+                        pixelbfr[i * 3 + 2] = *curPx;
                     }
 
                     break;
@@ -173,9 +181,10 @@ namespace BMPlib
                     ReInitialize(width, height, COLOR_MODE::RGBA);
                     for (std::size_t i = 0; i < numPx; i++)
                     {
-                        pixelbfr[i * 4 + 0] = tmp_pxlbfr[i];
-                        pixelbfr[i * 4 + 1] = tmp_pxlbfr[i];
-                        pixelbfr[i * 4 + 2] = tmp_pxlbfr[i];
+                        curPx = tmp_pxlbfr + i;
+                        pixelbfr[i * 4 + 0] = *curPx;
+                        pixelbfr[i * 4 + 1] = *curPx;
+                        pixelbfr[i * 4 + 2] = *curPx;
                         pixelbfr[i * 4 + 3] = 0xFF;
                     }
                     break;
@@ -185,9 +194,11 @@ namespace BMPlib
                 }
 
 #pragma endregion
+#endif
                 break;
 
             case COLOR_MODE::RGB:
+#ifndef __linux__
 #pragma region CONVERT_FROM_RGB
                 switch (convto)
                 {
@@ -197,13 +208,19 @@ namespace BMPlib
                     ReInitialize(width, height, COLOR_MODE::BW);
                     for (std::size_t i = 0; i < numPx; i++)
                     {
+                        curPx = tmp_pxlbfr + i * 3;
+
+                        // Don't ask me why but the compiler hates dereferencing tmp_pxlbfr/curPx via [] and throws false warnings...
                         if (isNonColorData)
-                            pixelbfr[i] = (byte)((tmp_pxlbfr[i * 3 + 0] + tmp_pxlbfr[i * 3 + 1] + tmp_pxlbfr[i * 3 + 2]) * 0.33333333);
+                            pixelbfr[i] = (byte)((
+                                *(curPx + 0) + 
+                                *(curPx + 1) + 
+                                *(curPx + 2)) * 0.33333333);
                         else
                             pixelbfr[i] = (byte)(
-                                tmp_pxlbfr[i * 3 + 0] * 0.3 +
-                                tmp_pxlbfr[i * 3 + 1] * 0.59 +
-                                tmp_pxlbfr[i * 3 + 2] * 0.11);
+                                *(curPx + 0) * 0.3 +
+                                *(curPx + 1) * 0.59 +
+                                *(curPx + 2) * 0.11);
                     }
                     break;
 
@@ -213,9 +230,11 @@ namespace BMPlib
                     ReInitialize(width, height, COLOR_MODE::RGBA);
                     for (std::size_t i = 0; i < numPx; i++)
                     {
-                        pixelbfr[i * 4 + 0] = tmp_pxlbfr[i * 3 + 0];
-                        pixelbfr[i * 4 + 1] = tmp_pxlbfr[i * 3 + 1];
-                        pixelbfr[i * 4 + 2] = tmp_pxlbfr[i * 3 + 2];
+                        curPx = tmp_pxlbfr + i * 3;
+
+                        pixelbfr[i * 4 + 0] = *(curPx + 0);
+                        pixelbfr[i * 4 + 1] = *(curPx + 1);
+                        pixelbfr[i * 4 + 2] = *(curPx + 2);
                         pixelbfr[i * 4 + 3] = 0xFF;
                     }
                     break;
@@ -224,9 +243,11 @@ namespace BMPlib
                     break;
                 }
 #pragma endregion
+#endif
                 break;
             
             case COLOR_MODE::RGBA:
+#ifndef __linux__
 #pragma region CONVERT_FROM_RGBA
                 switch (convto)
                 {
@@ -236,13 +257,18 @@ namespace BMPlib
                     ReInitialize(width, height, COLOR_MODE::BW);
                     for (std::size_t i = 0; i < numPx; i++)
                     {
+                        curPx = tmp_pxlbfr + i * 4;
+
                         if (isNonColorData)
-                            pixelbfr[i] = (byte)((tmp_pxlbfr[i * 4 + 0] + tmp_pxlbfr[i * 4 + 1] + tmp_pxlbfr[i * 4 + 2]) * 0.33333333);
+                            pixelbfr[i] = (byte)((
+                                *(curPx + 0) + 
+                                *(curPx + 1) +
+                                *(curPx + 2)) * 0.33333333);
                         else
                             pixelbfr[i] = (byte)(
-                                tmp_pxlbfr[i * 4 + 0] * 0.3 +
-                                tmp_pxlbfr[i * 4 + 1] * 0.59 +
-                                tmp_pxlbfr[i * 4 + 2] * 0.11);
+                                *(curPx + 0) * 0.3 +
+                                *(curPx + 1) * 0.59 +
+                                *(curPx + 2) * 0.11);
                     }
                     break;
 
@@ -252,9 +278,11 @@ namespace BMPlib
                     ReInitialize(width, height, COLOR_MODE::RGB);
                     for (std::size_t i = 0; i < numPx; i++)
                     {
-                        pixelbfr[i * 3 + 0] = tmp_pxlbfr[i * 4 + 0];
-                        pixelbfr[i * 3 + 1] = tmp_pxlbfr[i * 4 + 1];
-                        pixelbfr[i * 3 + 2] = tmp_pxlbfr[i * 4 + 2];
+                        curPx = tmp_pxlbfr + i * 4;
+
+                        pixelbfr[i * 3 + 0] = *(curPx + 0);
+                        pixelbfr[i * 3 + 1] = *(curPx + 1);
+                        pixelbfr[i * 3 + 2] = *(curPx + 2);
                     }
                     break;
 
@@ -262,6 +290,7 @@ namespace BMPlib
                     break;
                 }
 #pragma endregion
+#endif
                 break;
             }
 
@@ -320,7 +349,7 @@ namespace BMPlib
         // If using RGBA, use all
         // If using RGB, a gets ignored
         // If using BW, use only r
-        void SetPixel(const std::size_t& x, const std::size_t& y, const byte& r, const byte& g, const byte& b, const byte& a)
+        void SetPixel(const std::size_t& x, const std::size_t& y, const byte& r, const byte& g = 0, const byte& b = 0, const byte& a = 0)
         {
             byte* px = GetPixel(x, y);
 
@@ -380,7 +409,7 @@ namespace BMPlib
             for (long long y = height - 1; y >= 0; y--)
                 for (std::size_t x = 0; x < width; x++)
                 {
-                    std::size_t idx = CalculatePixelIndex(x, y);
+                    std::size_t idx = CalculatePixelIndex(x, (std::size_t)y); // No precision lost here. I just need a type that can get as large as std::size_t but is also signed (because for y >= 0)
 
                     switch (colorMode)
                     {
@@ -413,12 +442,14 @@ namespace BMPlib
                 }
 
             // write file
-            byteofstream bs;
-            bs.open(filename, byteofstream::binary);
+            std::ofstream bs;
+            bs.open(filename, std::ofstream::binary);
             if (!bs.good())
                 return false;
 
-            bs << data;
+            bytestring bytes = data.str();
+            bs.write((const char*)bytes.c_str(), bytes.length());
+            bs.flush();
             bs.close();
 
             return true;
@@ -427,8 +458,8 @@ namespace BMPlib
         // Will read a bmp image
         bool Read(std::string filename)
         {
-            byteifstream bs;
-            bs.open(filename, byteifstream::binary);
+            std::ifstream bs;
+            bs.open(filename, std::ifstream::binary);
             if (!bs.good())
                 return false;
 
@@ -499,24 +530,24 @@ namespace BMPlib
             for (long long y = imgHeight - 1; y >= 0; y--)
                 for (std::size_t x = 0; x < imgWidth; x++)
                 {
-                    std::size_t idx = CalculatePixelIndex(x, y);
+                    std::size_t idx = CalculatePixelIndex(x, (std::size_t)y); // No precision lost here. I just need a type that can get as large as std::size_t but is also signed (because for y >= 0)
 
                     switch (colorMode)
                     {
                     case COLOR_MODE::RGB:
                         // bmp format ==> B-G-R ==> R-G-B ==> pixelbfr
-                        bs.read((pixelbfr + idx + 2), 1); // Read B byte
-                        bs.read((pixelbfr + idx + 1), 1); // Read G byte
-                        bs.read((pixelbfr + idx + 0), 1); // Read R byte
+                        bs.read((char*)(pixelbfr + idx + 2), 1); // Read B byte
+                        bs.read((char*)(pixelbfr + idx + 1), 1); // Read G byte
+                        bs.read((char*)(pixelbfr + idx + 0), 1); // Read R byte
                         break;
 
                     case COLOR_MODE::RGBA:
 
                         // bmp format ==> B-G-R-A ==> R-G-B-A ==> pixelbfr
-                        bs.read((pixelbfr + idx + 2), 1); // Read B byte
-                        bs.read((pixelbfr + idx + 1), 1); // Read G byte
-                        bs.read((pixelbfr + idx + 0), 1); // Read R byte
-                        bs.read((pixelbfr + idx + 3), 1); // Read A byte
+                        bs.read((char*)(pixelbfr + idx + 2), 1); // Read B byte
+                        bs.read((char*)(pixelbfr + idx + 1), 1); // Read G byte
+                        bs.read((char*)(pixelbfr + idx + 0), 1); // Read R byte
+                        bs.read((char*)(pixelbfr + idx + 3), 1); // Read A byte
                         break;
 
                     default:
@@ -530,15 +561,18 @@ namespace BMPlib
 
         ~BMP()
         {
-            delete[] pixelbfr;
-            pixelbfr = nullptr;
-
+            if (isInitialized)
+            {
+                delete[] pixelbfr;
+                pixelbfr = nullptr;
+            }
             return;
         }
 
     private:
-        void ThrowException(std::string msg) const
+        void ThrowException(const std::string msg) const
         {
+            std::cerr << "BMPlib exception: " << msg << std::endl;
             throw msg;
             return;
         }

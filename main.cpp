@@ -57,15 +57,15 @@ void Example3()
     // Another example
     // Create image object of size 800x600px
     BMP bmp(800, 600);
-
+    
     // Generate nice color gradient image
     for (std::size_t x = 0; x < 800; x++)
         for (std::size_t y = 0; y < 600; y++)
         {
             bmp.SetPixel(x, y,
-                ((double)x / 800.0) * 255.0,
-                (1.0 - ((double)x / 800.0)) * 255.0,
-                (1.0 - ((double)y / 800.0)) * 255.0,
+                (byte)(       ((double)x / 800.0) * 255.0),
+                (byte)((1.0 - ((double)x / 800.0)) * 255.0),
+                (byte)((1.0 - ((double)y / 800.0)) * 255.0),
                 255);
         }
 
