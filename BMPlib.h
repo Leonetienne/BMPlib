@@ -160,6 +160,7 @@ namespace BMPlib
             case COLOR_MODE::BW:
 #ifndef __linux__
 #pragma region CONVERT_FROM_BW
+#endif
                 switch (convto)
                 {
                 case COLOR_MODE::RGB:
@@ -192,7 +193,7 @@ namespace BMPlib
                 default:
                     break;
                 }
-
+#ifndef __linux__
 #pragma endregion
 #endif
                 break;
@@ -200,6 +201,7 @@ namespace BMPlib
             case COLOR_MODE::RGB:
 #ifndef __linux__
 #pragma region CONVERT_FROM_RGB
+#endif
                 switch (convto)
                 {
                 case COLOR_MODE::BW:
@@ -242,6 +244,7 @@ namespace BMPlib
                 default:
                     break;
                 }
+#ifndef __linux__
 #pragma endregion
 #endif
                 break;
@@ -249,6 +252,7 @@ namespace BMPlib
             case COLOR_MODE::RGBA:
 #ifndef __linux__
 #pragma region CONVERT_FROM_RGBA
+#endif
                 switch (convto)
                 {
                 case COLOR_MODE::BW:
@@ -289,6 +293,7 @@ namespace BMPlib
                 default:
                     break;
                 }
+#ifndef __linux__
 #pragma endregion
 #endif
                 break;
