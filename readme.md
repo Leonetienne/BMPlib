@@ -1,5 +1,5 @@
 # BMPlib
-Look at main.cpp for examples
+Look at main.cpp for more examples
 
 Disclaimer!!:
 > This is in no way, shape or form complete or compatible with every possible bmp!
@@ -24,25 +24,36 @@ bmp.Write("cute.bmp");
 
 ##### Create and modify image
 ```c++
-BMP bmp(800, 600); // Default is RGB
+BMP bmp(800, 600);               // Default is RGB
 bmp.SetPixel(0, 0, 255, 0, 255); // Make topleft pixel pink
 ```
 
 ##### Create images of different color spaces
 ```c++
 BMP bw(800, 600, BMP::COLOR_MODE::BW); // Black/white image
-bw.SetPixel(0, 0, 128); /// Make topleft pixel gray
+bw.SetPixel(0, 0, 128);                // Make topleft pixel gray
 
 BMP rgb(800, 600, BMP::COLOR_MODE::RGB); // RGB image. It's the default color space tho..
-rgb.SetPixel(10, 20, 255, 0, 255); // Make pixel at (x10, y20) pink
+rgb.SetPixel(10, 20, 255, 0, 255);       // Make pixel at (x10, y20) pink
 
-BMP rgba(800, 600, BMP::COLOR_MODE::RGB); // RGBA image. RGB with transparency
-rgba.SetPixel(50, 60, 0, 0, 0, 0); // Make pixel completely transparent
+BMP rgba(800, 600, BMP::COLOR_MODE::RGBA); // RGBA image. RGB with transparency
+rgba.SetPixel(50, 60, 0, 0, 0, 0);        // Make pixel completely transparent
+```
+
+##### Get pixel data
+##### Modify individual pixel channels
+```c++
+BMP bmp(800, 600);                  // Default is RGB
+byte* pixel = bmp.GetPixel(20, 25); // Pixel at (x20, y25)
+pixel[0] = 33; // Set red channel
+pixel[1] = 25; // Set green channel
+pixel[2] = 19; // Set green channel
+pixel[3] = 99; // Set alpha channel (if image type is rgba)
 ```
 
 ##### Convert between color spaces
 ```c++
-BMP bmp(800, 600); // Default is RGB
+BMP bmp(800, 600);                    // Default is RGB
 bmp.ConvertTo(BMP::COLOR_MODE::RGBA); // Now it's RGBA
 ```
 
@@ -61,6 +72,20 @@ bmp.ConvertTo(BMP::COLOR_MODE::BW, true);
 ```c++
 bmp.Read("cute.bmp"); // BMP doesn't support true BW so it's RGB with redundant channels
 bmp.ConvertTo(BMP::COLOR_MODE::BW, true); // Convert to BW color space to save memory. Also pass "true" for "non-color-data" (like, a PBR map).
+```
+
+##### Get raw pixel buffer
+```c++
+BMP bmp(800, 600);                    // Default is RGB
+byte* pixelbfr = bmp.GetPixelBuffer();// byte is just unsigned char
+
+// pixelbfr formats:
+// each byte represents a channel of a pixel
+// pixel channels always lie next to each other (RGBRGBRGB) = ([RGB][RGB][RGB])
+// formula for index by pixel coordinates: numChannels * ((y * width) + x); (always points to the first byte)
+// for   BW: VVVVVVVVVVVVVVV  -> 15 pixels
+// for  RGB: RGBRGBRGBRGBRGB  -> 5 pixels
+// for RGBA: RGBARGBARGBARGBA -> 4 pixels
 ```
 
 ##### Check BMPlib version
