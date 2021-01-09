@@ -1,7 +1,21 @@
+/*
+    Author: Leon Etienne
+    Copyright (c) 2021, Leon Etienne
+    https://github.com/Leonetienne
+    https://github.com/Leonetienne/BMPlib
+
+    License:
+    Don't Be a Jerk: The Open Source Software License. Last Update: Jan, 7, 2021
+    This software is free and open source.
+    Please read the full license: https://github.com/Leonetienne/BMPlib/blob/master/license.txt
+*/
+
 #pragma once
 #include <sstream>
 #include <fstream>
 #include <string.h>
+
+#define BMPLIB_VERSION 0.5
 
 namespace BMPlib
 {
@@ -16,7 +30,7 @@ namespace BMPlib
     // Will convert (int)15 to 0F 00 00 00 and NOT TO 00 00 00 0F
     bytestring ToBytes(T t)
     {
-        std::basic_stringstream<byte> toret;
+        bytestream toret;
         long long sizeofT = (long long)sizeof(T); // Let's make it a signed value to keep the compiler happy with the comparison
         byte* bPtr = (byte*)&t;
         for (long long i = 0; i < sizeofT; i++)
@@ -399,16 +413,16 @@ namespace BMPlib
 
                 // DIB Header
                 << ToBytes(byte4(0x28))   // Number of bytes in DIB header (without this field)
-                << ToBytes(byte4(width))    // width
-                << ToBytes(byte4(height))   // height
-                << ToBytes(byte2(1))    // number of planes used
+                << ToBytes(byte4(width))  // width
+                << ToBytes(byte4(height)) // height
+                << ToBytes(byte2(1))      // number of planes used
                 << ToBytes(byte2(numChannelsFile * 8))   // bit-depth
-                << ToBytes(byte4(0))    // no compression
+                << ToBytes(byte4(0))      // no compression
                 << ToBytes(byte4(width * height * numChannelsFile))   // Size of raw bitmap data (including padding)
-                << ToBytes(byte4(0xB13)) // print resolution pixels/meter X
-                << ToBytes(byte4(0xB13)) // print resolution pixels/meter Y
-                << ToBytes(byte4(0))    // 0 colors in the color palette
-                << ToBytes(byte4(0));   // 0 means all colors are important
+                << ToBytes(byte4(0xB13))  // print resolution pixels/meter X
+                << ToBytes(byte4(0xB13))  // print resolution pixels/meter Y
+                << ToBytes(byte4(0))      // 0 colors in the color palette
+                << ToBytes(byte4(0));     // 0 means all colors are important
 
             // Dumbass unusual pixel order of bmp made me do this...
             for (long long y = height - 1; y >= 0; y--)
@@ -547,7 +561,6 @@ namespace BMPlib
                         break;
 
                     case COLOR_MODE::RGBA:
-
                         // bmp format ==> B-G-R-A ==> R-G-B-A ==> pixelbfr
                         bs.read((char*)(pixelbfr + idx + 2), 1); // Read B byte
                         bs.read((char*)(pixelbfr + idx + 1), 1); // Read G byte
