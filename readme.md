@@ -6,7 +6,67 @@ Disclaimer!!:
 > It does exactly what I need it to, and that is to convert most bmp images to pixel buffers, convert between rgb/rgba/bw pixel buffers and write it all back to a bmp image.
 > I am just publishing this in case someone wants to do said things and does not care about incompatibilities with some bmps.
 
-Without saying, this compiles cleanly with `g++ main.cpp -Wall -Wextra -Wpedantic`
+Without saying, this compiles cleanly with `g++ main.cpp -Wall -Wextra -Wpedantic`.
+
+## Basic usage:
+*Assuming `using namespace BMPlib`.
+
+##### Read image
+```c++
+BMP bmp;
+bmp.Read("cute.bmp");
+```
+
+##### Write image
+```c++
+bmp.Write("cute.bmp");
+```
+
+##### Create and modify image
+```c++
+BMP bmp(800, 600); // Default is RGB
+bmp.SetPixel(0, 0, 255, 0, 255); // Make topleft pixel pink
+```
+
+##### Create images of different color spaces
+```c++
+BMP bw(800, 600, BMP::COLOR_MODE::BW); // Black/white image
+bw.SetPixel(0, 0, 128); /// Make topleft pixel gray
+
+BMP rgb(800, 600, BMP::COLOR_MODE::RGB); // RGB image. It's the default color space tho..
+rgb.SetPixel(10, 20, 255, 0, 255); // Make pixel at (x10, y20) pink
+
+BMP rgba(800, 600, BMP::COLOR_MODE::RGB); // RGBA image. RGB with transparency
+rgba.SetPixel(50, 60, 0, 0, 0, 0); // Make pixel completely transparent
+```
+
+##### Convert between color spaces
+```c++
+BMP bmp(800, 600); // Default is RGB
+bmp.ConvertTo(BMP::COLOR_MODE::RGBA); // Now it's RGBA
+```
+
+##### Convert color to B/W
+```c++
+BMP bmp(800, 600); // Default is RGB
+
+// This converts color to bw the "color"-way. bw = r*0.3 + g*0.59 + b*0.11
+bmp.ConvertTo(BMP::COLOR_MODE::BW);
+
+// This converts color to bw the "value"-way. bw = (r+g+b) / 3
+bmp.ConvertTo(BMP::COLOR_MODE::BW, true);
+```
+
+##### Load B/W image
+```c++
+bmp.Read("cute.bmp"); // BMP doesn't support true BW so it's RGB with redundant channels
+bmp.ConvertTo(BMP::COLOR_MODE::BW, true); // Convert to BW color space to save memory. Also pass "true" for "non-color-data" (like, a PBR map).
+```
+
+##### Check BMPlib version
+```
+BMPlib #defines BMPLIB_VERSION <some double value>
+```
 
 ## License
 Don't Be a Jerk: The Open Source Software License.
