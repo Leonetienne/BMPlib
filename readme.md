@@ -37,7 +37,7 @@ BMP rgb(800, 600, BMP::COLOR_MODE::RGB); // RGB image. It's the default color sp
 rgb.SetPixel(10, 20, 255, 0, 255);       // Make pixel at (x10, y20) pink
 
 BMP rgba(800, 600, BMP::COLOR_MODE::RGBA); // RGBA image. RGB with transparency
-rgba.SetPixel(50, 60, 0, 0, 0, 0);        // Make pixel completely transparent
+rgba.SetPixel(50, 60, 0, 0, 0, 0);         // Make pixel completely transparent
 ```
 
 ##### Get pixel data
@@ -45,9 +45,9 @@ rgba.SetPixel(50, 60, 0, 0, 0, 0);        // Make pixel completely transparent
 ```c++
 BMP bmp(800, 600);                  // Default is RGB
 byte* pixel = bmp.GetPixel(20, 25); // Pixel at (x20, y25)
-pixel[0] = 33; // Set red channel
+pixel[0] = 33; // Set red channel (or v channel if image is BW)
 pixel[1] = 25; // Set green channel
-pixel[2] = 19; // Set green channel
+pixel[2] = 19; // Set blue channel
 pixel[3] = 99; // Set alpha channel (if image type is rgba)
 ```
 
