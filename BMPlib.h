@@ -402,7 +402,7 @@ namespace BMPlib
                 return false;
 
             std::size_t paddingSize = (4 - ((width * numChannelsFile) % 4)) % 4; // number of padding bytes per scanline
-            byte paddingData[8] = { 0x69,0x69,0x69,0x69 }; // dummy-data for padding
+            byte paddingData[4] = { 0x69,0x69,0x69,0x69 }; // dummy-data for padding
 
             bytestream data;
             data
