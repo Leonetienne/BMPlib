@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <random>
 #include "BMPlib.h"
 
 using namespace BMPlib;
@@ -75,9 +76,58 @@ void Example3()
     return;
 }
 
+void Example4()
+{
+    // Another example
+    // Will mix up the RGB channels randomly per pixel
+    // Will also work with RGBA
+    BMP bmp;
+    bmp.Read("onion.bmp");
+
+    // It would seriously mess up BW images, so let's account for that
+    if (bmp.GetColorMode() != BMP::COLOR_MODE::BW)
+        bmp.ConvertTo(BMP::COLOR_MODE::RGB);
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    for (std::size_t x = 0; x < bmp.GetWidth(); x++)
+        for (std::size_t y = 0; y < bmp.GetHeight(); y++)
+        {
+            // swap channel randomly for cool effect
+            byte* px = bmp.GetPixel(x, y);
+            int rnd = rng() % 6;
+
+            switch (rnd)
+            {
+            case 0:
+                bmp.SetPixel(x, y, px[0], px[1], px[2]);
+                break;
+            case 1:
+                bmp.SetPixel(x, y, px[0], px[2], px[1]);
+                break;
+            case 2:
+                bmp.SetPixel(x, y, px[1], px[0], px[2]);
+                break;
+            case 3:
+                bmp.SetPixel(x, y, px[1], px[2], px[0]);
+                break;
+            case 4:
+                bmp.SetPixel(x, y, px[2], px[1], px[0]);
+                break;
+            case 5:
+                bmp.SetPixel(x, y, px[2], px[0], px[2]);
+                break;
+            }
+        }
+
+    bmp.Write("onion_out.bmp");
+    return;
+}
+
 int main()
 {
-    Example3();
+    Example4();
 
     return 0;
 }

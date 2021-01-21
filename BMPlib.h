@@ -401,31 +401,36 @@ namespace BMPlib
             if (!isInitialized)
                 return false;
 
-            bytestream data;
+            std::size_t paddingSize = (4 - ((width * numChannelsFile) % 4)) % 4; // number of padding bytes per scanline
+            byte paddingData[8] = { 0x69,0x69,0x69,0x69 }; // dummy-data for padding
 
+            bytestream data;
             data
                 // BMP Header
-                << ToBytes(byte2(0x4D42))               // signature
-                << ToBytes(byte4(0x36 + sizeofPxlbfr))  // size of the bmp file (all bytes)
-                << ToBytes(byte2(0))    // unused
-                << ToBytes(byte2(0))    // unused
-                << ToBytes(byte4(0x36)) // Offset where the pixel array begins (size of both headers)
+                << ToBytes(byte2(0x4D42)) // signature
+                << ToBytes(byte4(0x38 + sizeofPxlbfr + paddingSize * height)) // size of the bmp file (all bytes)
+                << ToBytes(byte2(0))      // unused
+                << ToBytes(byte2(0))      // unused
+                << ToBytes(byte4(0x38))   // Offset where the pixel array begins (size of both headers)
 
                 // DIB Header
                 << ToBytes(byte4(0x28))   // Number of bytes in DIB header (without this field)
                 << ToBytes(byte4(width))  // width
                 << ToBytes(byte4(height)) // height
                 << ToBytes(byte2(1))      // number of planes used
-                << ToBytes(byte2(numChannelsFile * 8))   // bit-depth
+                << ToBytes(byte2(numChannelsFile * 8)) // bit-depth
                 << ToBytes(byte4(0))      // no compression
-                << ToBytes(byte4(width * height * numChannelsFile))   // Size of raw bitmap data (including padding)
+                << ToBytes(byte4(sizeofPxlbfr + paddingSize * height)) // Size of raw bitmap data (including padding)
                 << ToBytes(byte4(0xB13))  // print resolution pixels/meter X
                 << ToBytes(byte4(0xB13))  // print resolution pixels/meter Y
                 << ToBytes(byte4(0))      // 0 colors in the color palette
                 << ToBytes(byte4(0));     // 0 means all colors are important
 
+            data.write(paddingData, 2);
+
             // Dumbass unusual pixel order of bmp made me do this...
             for (long long y = height - 1; y >= 0; y--)
+            {
                 for (std::size_t x = 0; x < width; x++)
                 {
                     std::size_t idx = CalculatePixelIndex(x, (std::size_t)y); // No precision lost here. I just need a type that can get as large as std::size_t but is also signed (because for y >= 0)
@@ -457,8 +462,14 @@ namespace BMPlib
 
                         break;
                     }
-
                 }
+
+                if ((colorMode == COLOR_MODE::BW) || (colorMode == COLOR_MODE::RGB))
+                    if (paddingSize > 0)
+                        data.write(paddingData, paddingSize);
+            }
+
+
 
             // write file
             std::ofstream bs;
@@ -542,11 +553,20 @@ namespace BMPlib
             FromBytes(bs, colorsInPalette);
             FromBytes(bs, importantColors);
 
+            // Go to the beginning of the pixel array
+            bs.seekg(offsetPixelArray);
+
             // Initialize image
             ReInitialize(imgWidth, imgHeight, colorMode);
 
+            // Calculate scanline padding size
+            std::size_t paddingSize = (4 - ((width * numChannelsFile) % 4)) % 4;
+            paddingSize = paddingSize < 4 ? paddingSize : 0;
+
             // Dumbass unusual pixel order of bmp made me do this...
             for (long long y = imgHeight - 1; y >= 0; y--)
+            {
+                std::size_t byteCounter = 0;
                 for (std::size_t x = 0; x < imgWidth; x++)
                 {
                     std::size_t idx = CalculatePixelIndex(x, (std::size_t)y); // No precision lost here. I just need a type that can get as large as std::size_t but is also signed (because for y >= 0)
@@ -558,6 +578,7 @@ namespace BMPlib
                         bs.read((char*)(pixelbfr + idx + 2), 1); // Read B byte
                         bs.read((char*)(pixelbfr + idx + 1), 1); // Read G byte
                         bs.read((char*)(pixelbfr + idx + 0), 1); // Read R byte
+                        byteCounter += 3;
                         break;
 
                     case COLOR_MODE::RGBA:
@@ -566,12 +587,18 @@ namespace BMPlib
                         bs.read((char*)(pixelbfr + idx + 1), 1); // Read G byte
                         bs.read((char*)(pixelbfr + idx + 0), 1); // Read R byte
                         bs.read((char*)(pixelbfr + idx + 3), 1); // Read A byte
+                        byteCounter += 4;
                         break;
 
                     default:
                         break;
                     }
                 }
+
+                if ((colorMode == COLOR_MODE::BW) || (colorMode == COLOR_MODE::RGB)) // RGBA will always be a multiple of 4 bytes
+                   if (byteCounter % 4) // If this scan line was not a multiple of 4 bytes long, account for padding
+                        bs.ignore(paddingSize);
+            }
 
             bs.close();
             return true;
