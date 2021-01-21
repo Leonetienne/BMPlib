@@ -116,7 +116,7 @@ void Example4()
                 bmp.SetPixel(x, y, px[2], px[1], px[0]);
                 break;
             case 5:
-                bmp.SetPixel(x, y, px[2], px[0], px[2]);
+                bmp.SetPixel(x, y, px[2], px[0], px[1]);
                 break;
             }
         }
