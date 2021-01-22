@@ -8,6 +8,9 @@
     Don't Be a Jerk: The Open Source Software License. Last Update: Jan, 7, 2021
     This software is free and open source.
     Please read the full license: https://github.com/Leonetienne/BMPlib/blob/master/license.txt
+
+    #define BMPLIB_SILENT
+    if you want bmplib to stop writing exceptions to stderr
 */
 
 #pragma once
@@ -15,7 +18,7 @@
 #include <fstream>
 #include <string.h>
 
-#define BMPLIB_VERSION 0.6
+#define BMPLIB_VERSION 0.601
 
 namespace BMPlib
 {
@@ -89,8 +92,7 @@ namespace BMPlib
 
         void ReInitialize(const std::size_t& width, const std::size_t& height, const BMP::COLOR_MODE& colorMode = BMP::COLOR_MODE::RGB)
         {
-            // w and h are unsigned so this works!
-            if (width + height == 0) ThrowException("Bad image dimensions!");
+            if ((!width) || (!height)) ThrowException("Bad image dimensions!");
 
             // Initialize bunch of stuff
             this->width = width;
@@ -617,7 +619,9 @@ namespace BMPlib
     private:
         void ThrowException(const std::string msg) const
         {
+            #ifndef BMPLIB_SILENT
             std::cerr << "BMPlib exception: " << msg << std::endl;
+            #endif
             throw msg;
             return;
         }
