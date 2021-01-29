@@ -125,9 +125,64 @@ void Example4()
     return;
 }
 
+void ExampleDiamonds()
+{
+    // Another example
+    // Will generate a black/white image of diamonds
+
+    // 62 is the pixel size of a diamond
+    BMP bmp(62 * 10 , 62 * 6, BMP::COLOR_MODE::BW);
+
+    for (std::size_t x = 0; x < bmp.GetWidth(); x++)
+        for (std::size_t y = 0; y < bmp.GetHeight(); y++)
+            bmp.SetPixel(x, y, tan(x / 20.0) * tan(y / 20.0) * 255);
+
+
+    bmp.Write("diamonds.bmp");
+
+    return;
+}
+
+void ExampleDiamondsWithSparkles()
+{
+    // Another examples
+    // Will generate an image of diamonds with sparkles
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    // 62 is the pixel size of a diamond
+    BMP bmp(62 * 10, 62 * 6);
+
+    for (std::size_t x = 0; x < bmp.GetWidth(); x++)
+        for (std::size_t y = 0; y < bmp.GetHeight(); y++)
+        {
+            byte* px = bmp.GetPixel(x, y);
+
+            // Generate main diamond pattern
+            byte bwpx = tan(x / 20.0) * tan(y / 20.0) * 255;
+            memset(px, bwpx, 3); // Set rgb to bwpx value
+
+            // Generate sparkles
+            int tsX = x % 63; // tilespace x
+            int tsY = y % 63; // tilespace y
+            if (abs(tsX - 31) * 0.7 * abs(tsY - 31) * 0.7 < 30)
+                if (!(rng() % 8))
+                {
+                    px[0] = rng() % 255;
+                    px[1] = rng() % 255;
+                    px[2] = rng() % 255;
+                }
+        }
+
+    bmp.Write("diamonds.bmp");
+
+    return;
+}
+
 int main()
 {
-    Example4();
+    ExampleDiamonds();
 
     return 0;
 }

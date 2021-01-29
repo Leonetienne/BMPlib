@@ -410,10 +410,10 @@ namespace BMPlib
             data
                 // BMP Header
                 << ToBytes(byte2(0x4D42)) // signature
-                << ToBytes(byte4(0x38 + sizeofPxlbfr + paddingSize * height)) // size of the bmp file (all bytes)
+                << ToBytes(byte4(0x36 + sizeofPxlbfr + paddingSize * height)) // size of the bmp file (all bytes)
                 << ToBytes(byte2(0))      // unused
                 << ToBytes(byte2(0))      // unused
-                << ToBytes(byte4(0x38))   // Offset where the pixel array begins (size of both headers)
+                << ToBytes(byte4(0x36))   // Offset where the pixel array begins (size of both headers)
 
                 // DIB Header
                 << ToBytes(byte4(0x28))   // Number of bytes in DIB header (without this field)
@@ -427,8 +427,6 @@ namespace BMPlib
                 << ToBytes(byte4(0xB13))  // print resolution pixels/meter Y
                 << ToBytes(byte4(0))      // 0 colors in the color palette
                 << ToBytes(byte4(0));     // 0 means all colors are important
-
-            data.write(paddingData, 2);
 
             // Dumbass unusual pixel order of bmp made me do this...
             for (long long y = height - 1; y >= 0; y--)
