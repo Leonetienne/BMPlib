@@ -618,7 +618,9 @@ namespace BMPlib
         void ThrowException(const std::string msg) const
         {
             #ifndef BMPLIB_SILENT
+            #ifdef _IOSTREAM_
             std::cerr << "BMPlib exception: " << msg << std::endl;
+            #endif
             #endif
             throw msg;
             return;
