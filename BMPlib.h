@@ -18,7 +18,7 @@
 #include <fstream>
 #include <string.h>
 
-#define BMPLIB_VERSION 0.601
+#define BMPLIB_VERSION 0.602
 
 namespace BMPlib
 {
